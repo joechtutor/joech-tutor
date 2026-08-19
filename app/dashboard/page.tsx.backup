@@ -1,0 +1,881 @@
+
+import Image from 'next/image'
+import Link from 'next/link'
+import LogoutButton from './LogoutButton'
+import { supabaseServer } from '../../lib/supabase-server'
+
+export default async function Dashboard() {
+  const supabase = await supabaseServer()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return null
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, role')
+    .eq('id', user.id)
+    .single()
+
+  const role = profile?.role || 'student'
+  const displayName = profile?.full_name || user.email || 'Student'
+
+  /*
+   * =========================================================
+   * STUDENT DASHBOARD
+   * =========================================================
+   */
+
+  if (role === 'student') {
+    const { count: completedAssessments } =
+      await supabase
+        .from('attempts')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('user_id', user.id)
+
+    const { count: assignedAssessments } =
+      await supabase
+        .from('assessment_assignments')
+        .select('*', {
+          count: 'exact',
+          head: true,
+        })
+        .eq('student_id', user.id)
+
+    const { data: recentAttempts } =
+      await supabase
+        .from('attempts')
+        .select(
+          'id, score, letter, submitted_at, assessment_id'
+        )
+        .eq('user_id', user.id)
+        .order('submitted_at', {
+          ascending: false,
+        })
+        .limit(5)
+
+    const scores =
+      recentAttempts
+        ?.map((attempt) => Number(attempt.score))
+        .filter((score) => !Number.isNaN(score)) || []
+
+    const averageScore =
+      scores.length > 0
+        ? Math.round(
+            scores.reduce(
+              (total, score) => total + score,
+              0
+            ) / scores.length
+          )
+        : 0
+
+    const firstLetter = displayName
+      .toString()
+      .charAt(0)
+      .toUpperCase()
+
+    return (
+      <main className="student-dashboard-page">
+
+        {/* =====================================================
+            STUDENT HEADER
+            ===================================================== */}
+
+        <header className="student-header">
+          <div className="student-header-inner">
+
+            <Link
+              href="/dashboard"
+              className="student-brand"
+            >
+              <Image
+                src="/joech-logo.jpg"
+                alt="JOECH TUTOR"
+                width={64}
+                height={64}
+                priority
+                className="student-brand-logo"
+              />
+
+              <div className="student-brand-text">
+                <div className="student-brand-name">
+                  JOECH TUTOR
+                </div>
+
+                <div className="student-brand-motto">
+                  Excellence Beyond Borders
+                </div>
+              </div>
+            </Link>
+
+            <div className="student-user-area">
+
+              <div className="student-user-avatar">
+                {firstLetter}
+              </div>
+
+              <div className="student-user-details">
+                <strong>{displayName}</strong>
+                <span>Student Portal</span>
+              </div>
+
+            </div>
+
+          </div>
+        </header>
+
+
+        {/* =====================================================
+            MAIN CONTENT
+            ===================================================== */}
+
+        <div className="student-container">
+
+          {/* ===================================================
+              WELCOME HERO
+              =================================================== */}
+
+          <section className="student-hero">
+
+            <div className="student-hero-content">
+
+              <div className="student-hero-label">
+                STUDENT LEARNING PORTAL
+              </div>
+
+              <h1>
+                Welcome back,
+                <br />
+                <span>{displayName}</span>
+              </h1>
+
+              <p>
+                Continue your learning journey, complete
+                your assessments and monitor your academic
+                progress.
+              </p>
+
+              <div className="student-hero-actions">
+
+                <Link
+                  href="/dashboard/student/assessments"
+                  className="student-primary-button"
+                >
+                  <span className="button-symbol">▶</span>
+                  Start an Assessment
+                </Link>
+
+                <Link
+                  href="/dashboard/student/results"
+                  className="student-secondary-button"
+                >
+                  View My Results
+                  <span>→</span>
+                </Link>
+
+              </div>
+
+            </div>
+
+            <div className="student-hero-visual">
+
+              <div className="hero-circle hero-circle-one" />
+              <div className="hero-circle hero-circle-two" />
+
+              <div className="hero-book">
+                <div className="hero-book-top">
+                  LEARN
+                </div>
+
+                <div className="hero-book-title">
+                  JOECH
+                </div>
+
+                <div className="hero-book-subtitle">
+                  TUTOR
+                </div>
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ===================================================
+              STATISTICS
+              =================================================== */}
+
+          <section className="student-statistics">
+
+            <div className="student-stat-card">
+
+              <div className="stat-icon stat-blue">
+                <span>◫</span>
+              </div>
+
+              <div className="stat-content">
+                <span className="stat-label">
+                  ASSIGNED
+                </span>
+
+                <strong>
+                  {assignedAssessments ?? 0}
+                </strong>
+
+                <small>
+                  Assessments waiting
+                </small>
+              </div>
+
+            </div>
+
+
+            <div className="student-stat-card">
+
+              <div className="stat-icon stat-green">
+                <span>✓</span>
+              </div>
+
+              <div className="stat-content">
+                <span className="stat-label">
+                  COMPLETED
+                </span>
+
+                <strong>
+                  {completedAssessments ?? 0}
+                </strong>
+
+                <small>
+                  Assessments completed
+                </small>
+              </div>
+
+            </div>
+
+
+            <div className="student-stat-card">
+
+              <div className="stat-icon stat-gold">
+                <span>★</span>
+              </div>
+
+              <div className="stat-content">
+                <span className="stat-label">
+                  AVERAGE SCORE
+                </span>
+
+                <strong>
+                  {averageScore}%
+                </strong>
+
+                <small>
+                  Recent performance
+                </small>
+              </div>
+
+            </div>
+
+
+            <div className="student-stat-card">
+
+              <div className="stat-icon stat-purple">
+                <span>◆</span>
+              </div>
+
+              <div className="stat-content">
+                <span className="stat-label">
+                  TARGET
+                </span>
+
+                <strong>
+                  70%+
+                </strong>
+
+                <small>
+                  Keep aiming higher
+                </small>
+              </div>
+
+            </div>
+
+          </section>
+
+
+          {/* ===================================================
+              TWO COLUMN CONTENT
+              =================================================== */}
+
+          <div className="student-main-grid">
+
+            {/* =================================================
+                LEFT COLUMN
+                ================================================= */}
+
+            <div className="student-left-column">
+
+              {/* =================================================
+                  MY LEARNING
+                  ================================================= */}
+
+              <section className="student-panel">
+
+                <div className="panel-heading">
+
+                  <div>
+                    <span className="panel-kicker">
+                      LEARNING
+                    </span>
+
+                    <h2>
+                      My Learning
+                    </h2>
+
+                    <p>
+                      Access your assessments and review
+                      your academic progress.
+                    </p>
+                  </div>
+
+                </div>
+
+
+                <div className="learning-options">
+
+                  <Link
+                    href="/dashboard/student/assessments"
+                    className="learning-option"
+                  >
+
+                    <div className="learning-option-icon learning-blue">
+                      📝
+                    </div>
+
+                    <div className="learning-option-content">
+                      <h3>
+                        My Assessments
+                      </h3>
+
+                      <p>
+                        View and complete your assigned
+                        assessments.
+                      </p>
+                    </div>
+
+                    <span className="learning-arrow">
+                      →
+                    </span>
+
+                  </Link>
+
+
+                  <Link
+                    href="/dashboard/student/results"
+                    className="learning-option"
+                  >
+
+                    <div className="learning-option-icon learning-green">
+                      📊
+                    </div>
+
+                    <div className="learning-option-content">
+                      <h3>
+                        My Results
+                      </h3>
+
+                      <p>
+                        Review your scores and assessment
+                        performance.
+                      </p>
+                    </div>
+
+                    <span className="learning-arrow">
+                      →
+                    </span>
+
+                  </Link>
+
+                </div>
+
+              </section>
+
+
+              {/* =================================================
+                  RECENT PERFORMANCE
+                  ================================================= */}
+
+              <section className="student-panel">
+
+                <div className="panel-heading panel-heading-row">
+
+                  <div>
+                    <span className="panel-kicker">
+                      PERFORMANCE
+                    </span>
+
+                    <h2>
+                      Recent Performance
+                    </h2>
+
+                    <p>
+                      Your latest assessment activity.
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/dashboard/student/results"
+                    className="view-all-link"
+                  >
+                    View All →
+                  </Link>
+
+                </div>
+
+
+                {recentAttempts &&
+                recentAttempts.length > 0 ? (
+
+                  <div className="recent-results">
+
+                    {recentAttempts.map(
+                      (attempt, index) => {
+
+                        const score =
+                          Number(attempt.score)
+
+                        const scoreClass =
+                          score >= 70
+                            ? 'score-excellent'
+                            : score >= 50
+                              ? 'score-average'
+                              : 'score-low'
+
+                        return (
+                          <div
+                            key={attempt.id}
+                            className="recent-result-row"
+                          >
+
+                            <div className="result-number">
+                              {String(index + 1).padStart(2, '0')}
+                            </div>
+
+                            <div className="result-details">
+
+                              <strong>
+                                Assessment
+                              </strong>
+
+                              <span>
+                                {attempt.submitted_at
+                                  ? new Date(
+                                      attempt.submitted_at
+                                    ).toLocaleDateString(
+                                      'en-GB',
+                                      {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                      }
+                                    )
+                                  : 'Recently completed'}
+                              </span>
+
+                            </div>
+
+                            <div
+                              className={`result-score ${scoreClass}`}
+                            >
+                              {score}%
+                            </div>
+
+                            <div className="result-grade">
+                              {attempt.letter || '-'}
+                            </div>
+
+                          </div>
+                        )
+                      }
+                    )}
+
+                  </div>
+
+                ) : (
+
+                  <div className="student-empty-state">
+
+                    <div className="empty-icon">
+                      📚
+                    </div>
+
+                    <h3>
+                      No completed assessments yet
+                    </h3>
+
+                    <p>
+                      Complete your first assessment to
+                      start building your performance history.
+                    </p>
+
+                    <Link
+                      href="/dashboard/student/assessments"
+                      className="student-primary-button"
+                    >
+                      View Assessments
+                    </Link>
+
+                  </div>
+
+                )}
+
+              </section>
+
+            </div>
+
+
+            {/* =================================================
+                RIGHT COLUMN
+                ================================================= */}
+
+            <aside className="student-right-column">
+
+              {/* =================================================
+                  PROGRESS CARD
+                  ================================================= */}
+
+              <section className="progress-card">
+
+                <div className="progress-card-header">
+
+                  <div>
+                    <span>
+                      YOUR PROGRESS
+                    </span>
+
+                    <h2>
+                      Keep Growing
+                    </h2>
+                  </div>
+
+                  <div className="progress-star">
+                    ★
+                  </div>
+
+                </div>
+
+
+                <div
+                  className="progress-ring"
+                  style={{
+                    background: `conic-gradient(#0b5ed7 ${averageScore}%, #e8edf4 ${averageScore}% 100%)`,
+                  }}
+                >
+
+                  <div className="progress-ring-inner">
+
+                    <strong>
+                      {averageScore}%
+                    </strong>
+
+                    <span>
+                      Average
+                    </span>
+
+                  </div>
+
+                </div>
+
+
+                <p className="progress-message">
+                  {averageScore >= 70
+                    ? 'Excellent work! Keep maintaining your strong performance.'
+                    : averageScore >= 50
+                      ? 'Good progress! Keep practising to reach the next level.'
+                      : 'Every assessment is an opportunity to improve. Keep going!'}
+                </p>
+
+
+                <Link
+                  href="/dashboard/student/results"
+                  className="progress-button"
+                >
+                  View Performance
+                  <span>→</span>
+                </Link>
+
+              </section>
+
+
+              {/* =================================================
+                  QUICK ACCESS
+                  ================================================= */}
+
+              <section className="quick-access-card">
+
+                <div className="quick-access-heading">
+                  <div>
+                    <span>
+                      SHORTCUTS
+                    </span>
+
+                    <h2>
+                      Quick Access
+                    </h2>
+                  </div>
+
+                  <div className="quick-access-icon">
+                    ⚡
+                  </div>
+                </div>
+
+
+                <Link
+                  href="/dashboard/student/assessments"
+                  className="quick-access-link"
+                >
+
+                  <div className="quick-link-icon quick-blue">
+                    📝
+                  </div>
+
+                  <div className="quick-link-text">
+                    <strong>
+                      Assessments
+                    </strong>
+
+                    <small>
+                      Take an assessment
+                    </small>
+                  </div>
+
+                  <span>
+                    →
+                  </span>
+
+                </Link>
+
+
+                <Link
+                  href="/dashboard/student/results"
+                  className="quick-access-link"
+                >
+
+                  <div className="quick-link-icon quick-green">
+                    📊
+                  </div>
+
+                  <div className="quick-link-text">
+                    <strong>
+                      Results
+                    </strong>
+
+                    <small>
+                      Check your scores
+                    </small>
+                  </div>
+
+                  <span>
+                    →
+                  </span>
+
+                </Link>
+
+              </section>
+
+            </aside>
+
+          </div>
+
+
+          {/* ===================================================
+              MOTIVATIONAL MESSAGE
+              =================================================== */}
+
+          <section className="student-motivation">
+
+            <div className="motivation-mark">
+              ✦
+            </div>
+
+            <div>
+              <strong>
+                Excellence Beyond Borders
+              </strong>
+
+              <p>
+                Every question you answer is another step
+                toward becoming a better learner. Stay
+                focused, keep practising and believe in
+                your ability to succeed.
+              </p>
+            </div>
+
+          </section>
+
+
+          {/* ===================================================
+              LOGOUT
+              =================================================== */}
+
+          <div className="student-logout">
+            <LogoutButton />
+          </div>
+
+        </div>
+
+
+        {/* =====================================================
+            FOOTER
+            ===================================================== */}
+
+        <footer className="student-footer">
+
+          <div>
+            <strong>
+              JOECH TUTOR
+            </strong>
+
+            <span>
+              Excellence Beyond Borders
+            </span>
+          </div>
+
+          <p>
+            Mathematics & English Assessment Platform
+          </p>
+
+        </footer>
+
+
+        {/* =====================================================
+            STUDENT DASHBOARD STYLES
+            ===================================================== */}
+
+        <style jsx>{`
+
+          * {
+            box-sizing: border-box;
+          }
+
+          .student-dashboard-page {
+            min-height: 100vh;
+            background: #f5f7fb;
+            color: #172033;
+            font-family:
+              Inter,
+              ui-sans-serif,
+              system-ui,
+              -apple-system,
+              BlinkMacSystemFont,
+              "Segoe UI",
+              sans-serif;
+          }
+
+          .student-header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e9f0;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+          }
+
+          .student-header-inner {
+            max-width: 1380px;
+            margin: 0 auto;
+            min-height: 84px;
+            padding: 12px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+          }
+
+          .student-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            color: inherit;
+          }
+
+          .student-brand-logo {
+            width: 58px;
+            height: 58px;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+          }
+
+          .student-brand-name {
+            font-size: 21px;
+            font-weight: 800;
+            letter-spacing: .4px;
+            color: #0d2340;
+          }
+
+          .student-brand-motto {
+            margin-top: 2px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #0b5ed7;
+            letter-spacing: .5px;
+          }
+
+          .student-user-area {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+          }
+
+          .student-user-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #0b5ed7;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 800;
+          }
+
+          .student-user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-align: right;
+          }
+
+          .student-user-details strong {
+            font-size: 14px;
+            color: #172033;
+          }
+
+          .student-user-details span {
+            font-size: 11px;
+            color: #718096;
+          }
+
+          .student-container {
+            max-width: 1380px;
+            margin: 0 auto;
+            padding: 32px;
+          }
+
+          .student-hero {
+            min-height: 310px;
+            border-radius: 20px;
+            background:
+              linear-gradient(
+                120deg,
+                #082b59 0%,
+                #0b5ed7 62%,
+                #1677e8 100%
+
