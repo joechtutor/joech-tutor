@@ -1,4 +1,3 @@
-
 import Image from 'next/image'
 import Link from 'next/link'
 import LogoutButton from './LogoutButton'
@@ -31,35 +30,30 @@ export default async function Dashboard() {
    */
 
   if (role === 'student') {
-    const { count: completedAssessments } =
-      await supabase
-        .from('attempts')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('user_id', user.id)
+    const { count: completedAssessments } = await supabase
+      .from('attempts')
+      .select('*', {
+        count: 'exact',
+        head: true,
+      })
+      .eq('user_id', user.id)
 
-    const { count: assignedAssessments } =
-      await supabase
-        .from('assessment_assignments')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
-        .eq('student_id', user.id)
+    const { count: assignedAssessments } = await supabase
+      .from('assessment_assignments')
+      .select('*', {
+        count: 'exact',
+        head: true,
+      })
+      .eq('student_id', user.id)
 
-    const { data: recentAttempts } =
-      await supabase
-        .from('attempts')
-        .select(
-          'id, score, letter, submitted_at, assessment_id'
-        )
-        .eq('user_id', user.id)
-        .order('submitted_at', {
-          ascending: false,
-        })
-        .limit(5)
+    const { data: recentAttempts } = await supabase
+      .from('attempts')
+      .select('id, score, letter, submitted_at, assessment_id')
+      .eq('user_id', user.id)
+      .order('submitted_at', {
+        ascending: false,
+      })
+      .limit(5)
 
     const scores =
       recentAttempts
@@ -83,14 +77,12 @@ export default async function Dashboard() {
 
     return (
       <main className="student-dashboard-page">
-
         {/* =====================================================
             STUDENT HEADER
             ===================================================== */}
 
         <header className="student-header">
           <div className="student-header-inner">
-
             <Link
               href="/dashboard"
               className="student-brand"
@@ -116,7 +108,6 @@ export default async function Dashboard() {
             </Link>
 
             <div className="student-user-area">
-
               <div className="student-user-avatar">
                 {firstLetter}
               </div>
@@ -125,27 +116,21 @@ export default async function Dashboard() {
                 <strong>{displayName}</strong>
                 <span>Student Portal</span>
               </div>
-
             </div>
-
           </div>
         </header>
-
 
         {/* =====================================================
             MAIN CONTENT
             ===================================================== */}
 
         <div className="student-container">
-
           {/* ===================================================
               WELCOME HERO
               =================================================== */}
 
           <section className="student-hero">
-
             <div className="student-hero-content">
-
               <div className="student-hero-label">
                 STUDENT LEARNING PORTAL
               </div>
@@ -163,7 +148,6 @@ export default async function Dashboard() {
               </p>
 
               <div className="student-hero-actions">
-
                 <Link
                   href="/dashboard/student/assessments"
                   className="student-primary-button"
@@ -179,13 +163,10 @@ export default async function Dashboard() {
                   View My Results
                   <span>→</span>
                 </Link>
-
               </div>
-
             </div>
 
             <div className="student-hero-visual">
-
               <div className="hero-circle hero-circle-one" />
               <div className="hero-circle hero-circle-two" />
 
@@ -202,20 +183,15 @@ export default async function Dashboard() {
                   TUTOR
                 </div>
               </div>
-
             </div>
-
           </section>
-
 
           {/* ===================================================
               STATISTICS
               =================================================== */}
 
           <section className="student-statistics">
-
             <div className="student-stat-card">
-
               <div className="stat-icon stat-blue">
                 <span>◫</span>
               </div>
@@ -233,12 +209,9 @@ export default async function Dashboard() {
                   Assessments waiting
                 </small>
               </div>
-
             </div>
 
-
             <div className="student-stat-card">
-
               <div className="stat-icon stat-green">
                 <span>✓</span>
               </div>
@@ -256,12 +229,9 @@ export default async function Dashboard() {
                   Assessments completed
                 </small>
               </div>
-
             </div>
 
-
             <div className="student-stat-card">
-
               <div className="stat-icon stat-gold">
                 <span>★</span>
               </div>
@@ -279,12 +249,9 @@ export default async function Dashboard() {
                   Recent performance
                 </small>
               </div>
-
             </div>
 
-
             <div className="student-stat-card">
-
               <div className="stat-icon stat-purple">
                 <span>◆</span>
               </div>
@@ -302,32 +269,25 @@ export default async function Dashboard() {
                   Keep aiming higher
                 </small>
               </div>
-
             </div>
-
           </section>
-
 
           {/* ===================================================
               TWO COLUMN CONTENT
               =================================================== */}
 
           <div className="student-main-grid">
-
             {/* =================================================
                 LEFT COLUMN
                 ================================================= */}
 
             <div className="student-left-column">
-
               {/* =================================================
                   MY LEARNING
                   ================================================= */}
 
               <section className="student-panel">
-
                 <div className="panel-heading">
-
                   <div>
                     <span className="panel-kicker">
                       LEARNING
@@ -342,17 +302,13 @@ export default async function Dashboard() {
                       your academic progress.
                     </p>
                   </div>
-
                 </div>
 
-
                 <div className="learning-options">
-
                   <Link
                     href="/dashboard/student/assessments"
                     className="learning-option"
                   >
-
                     <div className="learning-option-icon learning-blue">
                       📝
                     </div>
@@ -371,15 +327,12 @@ export default async function Dashboard() {
                     <span className="learning-arrow">
                       →
                     </span>
-
                   </Link>
-
 
                   <Link
                     href="/dashboard/student/results"
                     className="learning-option"
                   >
-
                     <div className="learning-option-icon learning-green">
                       📊
                     </div>
@@ -398,22 +351,16 @@ export default async function Dashboard() {
                     <span className="learning-arrow">
                       →
                     </span>
-
                   </Link>
-
                 </div>
-
               </section>
-
 
               {/* =================================================
                   RECENT PERFORMANCE
                   ================================================= */}
 
               <section className="student-panel">
-
                 <div className="panel-heading panel-heading-row">
-
                   <div>
                     <span className="panel-kicker">
                       PERFORMANCE
@@ -434,20 +381,16 @@ export default async function Dashboard() {
                   >
                     View All →
                   </Link>
-
                 </div>
-
 
                 {recentAttempts &&
                 recentAttempts.length > 0 ? (
-
                   <div className="recent-results">
-
                     {recentAttempts.map(
                       (attempt, index) => {
-
-                        const score =
-                          Number(attempt.score)
+                        const score = Number(
+                          attempt.score
+                        )
 
                         const scoreClass =
                           score >= 70
@@ -461,13 +404,14 @@ export default async function Dashboard() {
                             key={attempt.id}
                             className="recent-result-row"
                           >
-
                             <div className="result-number">
-                              {String(index + 1).padStart(2, '0')}
+                              {String(index + 1).padStart(
+                                2,
+                                '0'
+                              )}
                             </div>
 
                             <div className="result-details">
-
                               <strong>
                                 Assessment
                               </strong>
@@ -486,7 +430,6 @@ export default async function Dashboard() {
                                     )
                                   : 'Recently completed'}
                               </span>
-
                             </div>
 
                             <div
@@ -498,18 +441,13 @@ export default async function Dashboard() {
                             <div className="result-grade">
                               {attempt.letter || '-'}
                             </div>
-
                           </div>
                         )
                       }
                     )}
-
                   </div>
-
                 ) : (
-
                   <div className="student-empty-state">
-
                     <div className="empty-icon">
                       📚
                     </div>
@@ -529,30 +467,22 @@ export default async function Dashboard() {
                     >
                       View Assessments
                     </Link>
-
                   </div>
-
                 )}
-
               </section>
-
             </div>
-
 
             {/* =================================================
                 RIGHT COLUMN
                 ================================================= */}
 
             <aside className="student-right-column">
-
               {/* =================================================
                   PROGRESS CARD
                   ================================================= */}
 
               <section className="progress-card">
-
                 <div className="progress-card-header">
-
                   <div>
                     <span>
                       YOUR PROGRESS
@@ -566,19 +496,15 @@ export default async function Dashboard() {
                   <div className="progress-star">
                     ★
                   </div>
-
                 </div>
-
 
                 <div
                   className="progress-ring"
                   style={{
-                    background: `conic-gradient(#0b5ed7 ${averageScore}%, #e8edf4 ${averageScore}% 100%)`,
+                    background: `conic-gradient(#ffffff ${averageScore}%, rgba(255,255,255,.18) ${averageScore}% 100%)`,
                   }}
                 >
-
                   <div className="progress-ring-inner">
-
                     <strong>
                       {averageScore}%
                     </strong>
@@ -586,11 +512,8 @@ export default async function Dashboard() {
                     <span>
                       Average
                     </span>
-
                   </div>
-
                 </div>
-
 
                 <p className="progress-message">
                   {averageScore >= 70
@@ -600,7 +523,6 @@ export default async function Dashboard() {
                       : 'Every assessment is an opportunity to improve. Keep going!'}
                 </p>
 
-
                 <Link
                   href="/dashboard/student/results"
                   className="progress-button"
@@ -608,16 +530,13 @@ export default async function Dashboard() {
                   View Performance
                   <span>→</span>
                 </Link>
-
               </section>
-
 
               {/* =================================================
                   QUICK ACCESS
                   ================================================= */}
 
               <section className="quick-access-card">
-
                 <div className="quick-access-heading">
                   <div>
                     <span>
@@ -634,12 +553,10 @@ export default async function Dashboard() {
                   </div>
                 </div>
 
-
                 <Link
                   href="/dashboard/student/assessments"
                   className="quick-access-link"
                 >
-
                   <div className="quick-link-icon quick-blue">
                     📝
                   </div>
@@ -657,15 +574,12 @@ export default async function Dashboard() {
                   <span>
                     →
                   </span>
-
                 </Link>
-
 
                 <Link
                   href="/dashboard/student/results"
                   className="quick-access-link"
                 >
-
                   <div className="quick-link-icon quick-green">
                     📊
                   </div>
@@ -683,22 +597,16 @@ export default async function Dashboard() {
                   <span>
                     →
                   </span>
-
                 </Link>
-
               </section>
-
             </aside>
-
           </div>
-
 
           {/* ===================================================
               MOTIVATIONAL MESSAGE
               =================================================== */}
 
           <section className="student-motivation">
-
             <div className="motivation-mark">
               ✦
             </div>
@@ -715,9 +623,7 @@ export default async function Dashboard() {
                 your ability to succeed.
               </p>
             </div>
-
           </section>
-
 
           {/* ===================================================
               LOGOUT
@@ -726,16 +632,13 @@ export default async function Dashboard() {
           <div className="student-logout">
             <LogoutButton />
           </div>
-
         </div>
-
 
         {/* =====================================================
             FOOTER
             ===================================================== */}
 
         <footer className="student-footer">
-
           <div>
             <strong>
               JOECH TUTOR
@@ -747,18 +650,15 @@ export default async function Dashboard() {
           </div>
 
           <p>
-            Mathematics & English Assessment Platform
+            Mathematics &amp; English Assessment Platform
           </p>
-
         </footer>
-
 
         {/* =====================================================
             STUDENT DASHBOARD STYLES
             ===================================================== */}
 
-       <style>{`
-
+        <style>{`
           * {
             box-sizing: border-box;
           }
@@ -778,17 +678,17 @@ export default async function Dashboard() {
           }
 
           .student-header {
-            background: #ffffff;
-            border-bottom: 1px solid #e5e9f0;
             position: sticky;
             top: 0;
             z-index: 20;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e9f0;
           }
 
           .student-header-inner {
             max-width: 1380px;
-            margin: 0 auto;
             min-height: 84px;
+            margin: 0 auto;
             padding: 12px 32px;
             display: flex;
             align-items: center;
@@ -815,7 +715,7 @@ export default async function Dashboard() {
           .student-brand-name {
             font-size: 21px;
             font-weight: 800;
-            letter-spacing: .4px;
+            letter-spacing: 0.4px;
             color: #0d2340;
           }
 
@@ -824,7 +724,7 @@ export default async function Dashboard() {
             font-size: 11px;
             font-weight: 600;
             color: #0b5ed7;
-            letter-spacing: .5px;
+            letter-spacing: 0.5px;
           }
 
           .student-user-area {
@@ -838,7 +738,7 @@ export default async function Dashboard() {
             height: 42px;
             border-radius: 50%;
             background: #0b5ed7;
-            color: white;
+            color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -870,26 +770,23 @@ export default async function Dashboard() {
           }
 
           .student-hero {
+            position: relative;
             min-height: 310px;
+            overflow: hidden;
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            padding: 42px 48px;
             border-radius: 20px;
             background:
               linear-gradient(
                 120deg,
                 #082b59 0%,
                 #0b5ed7 62%,
-                #1677e8 100%              );
-
-          }
-
-          .student-hero {
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: stretch;
-            justify-content: space-between;
-            padding: 42px 48px;
+                #1677e8 100%
+              );
             color: #ffffff;
-            box-shadow: 0 18px 45px rgba(8, 43, 89, .16);
+            box-shadow: 0 18px 45px rgba(8, 43, 89, 0.16);
           }
 
           .student-hero-content {
@@ -902,13 +799,12 @@ export default async function Dashboard() {
           }
 
           .student-hero-label {
-            display: inline-flex;
             width: fit-content;
             margin-bottom: 14px;
             padding: 7px 12px;
-            border: 1px solid rgba(255,255,255,.28);
+            border: 1px solid rgba(255, 255, 255, 0.28);
             border-radius: 999px;
-            background: rgba(255,255,255,.10);
+            background: rgba(255, 255, 255, 0.1);
             font-size: 11px;
             font-weight: 800;
             letter-spacing: 1.2px;
@@ -929,7 +825,7 @@ export default async function Dashboard() {
           .student-hero p {
             max-width: 650px;
             margin: 18px 0 0;
-            color: rgba(255,255,255,.86);
+            color: rgba(255, 255, 255, 0.86);
             font-size: 16px;
             line-height: 1.7;
           }
@@ -954,13 +850,15 @@ export default async function Dashboard() {
             text-decoration: none;
             font-size: 13px;
             font-weight: 800;
-            transition: transform .18s ease, box-shadow .18s ease;
+            transition:
+              transform 0.18s ease,
+              box-shadow 0.18s ease;
           }
 
           .student-primary-button {
             background: #ffffff;
             color: #0b5ed7;
-            box-shadow: 0 10px 25px rgba(0,0,0,.14);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.14);
           }
 
           .student-primary-button:hover,
@@ -970,8 +868,8 @@ export default async function Dashboard() {
           }
 
           .student-secondary-button {
-            border: 1px solid rgba(255,255,255,.32);
-            background: rgba(255,255,255,.10);
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
           }
 
@@ -991,8 +889,8 @@ export default async function Dashboard() {
           .hero-circle {
             position: absolute;
             border-radius: 50%;
-            border: 1px solid rgba(255,255,255,.16);
-            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.06);
           }
 
           .hero-circle-one {
@@ -1014,7 +912,7 @@ export default async function Dashboard() {
             border-radius: 8px 14px 14px 8px;
             background: #ffffff;
             color: #0d2340;
-            box-shadow: 18px 20px 35px rgba(0,0,0,.22);
+            box-shadow: 18px 20px 35px rgba(0, 0, 0, 0.22);
             transform: rotate(4deg);
           }
 
@@ -1056,7 +954,7 @@ export default async function Dashboard() {
             background: #ffffff;
             border: 1px solid #e6eaf0;
             border-radius: 16px;
-            box-shadow: 0 8px 24px rgba(23,32,51,.05);
+            box-shadow: 0 8px 24px rgba(23, 32, 51, 0.05);
           }
 
           .stat-icon {
@@ -1099,7 +997,7 @@ export default async function Dashboard() {
             display: block;
             font-size: 10px;
             font-weight: 800;
-            letter-spacing: .8px;
+            letter-spacing: 0.8px;
             color: #718096;
           }
 
@@ -1130,12 +1028,7 @@ export default async function Dashboard() {
             min-width: 0;
           }
 
-          .student-left-column {
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-          }
-
+          .student-left-column,
           .student-right-column {
             display: flex;
             flex-direction: column;
@@ -1148,7 +1041,7 @@ export default async function Dashboard() {
             background: #ffffff;
             border: 1px solid #e6eaf0;
             border-radius: 17px;
-            box-shadow: 0 8px 24px rgba(23,32,51,.05);
+            box-shadow: 0 8px 24px rgba(23, 32, 51, 0.05);
           }
 
           .student-panel {
@@ -1209,13 +1102,16 @@ export default async function Dashboard() {
             border-radius: 13px;
             text-decoration: none;
             color: inherit;
-            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+            transition:
+              transform 0.18s ease,
+              border-color 0.18s ease,
+              box-shadow 0.18s ease;
           }
 
           .learning-option:hover {
             transform: translateY(-2px);
             border-color: #cbdcf5;
-            box-shadow: 0 8px 20px rgba(23,32,51,.07);
+            box-shadow: 0 8px 20px rgba(23, 32, 51, 0.07);
           }
 
           .learning-option-icon {
@@ -1379,7 +1275,7 @@ export default async function Dashboard() {
             font-size: 10px;
             font-weight: 800;
             letter-spacing: 1px;
-            opacity: .75;
+            opacity: 0.75;
           }
 
           .progress-card-header h2 {
@@ -1389,7 +1285,7 @@ export default async function Dashboard() {
 
           .progress-star {
             font-size: 25px;
-            opacity: .9;
+            opacity: 0.9;
           }
 
           .progress-ring {
@@ -1427,7 +1323,7 @@ export default async function Dashboard() {
 
           .progress-message {
             margin: 0;
-            color: rgba(255,255,255,.82);
+            color: rgba(255, 255, 255, 0.82);
             font-size: 12px;
             line-height: 1.65;
             text-align: center;
@@ -1582,7 +1478,7 @@ export default async function Dashboard() {
           .student-footer strong {
             color: #172033;
             font-size: 13px;
-            letter-spacing: .5px;
+            letter-spacing: 0.5px;
           }
 
           .student-footer span {
@@ -1596,8 +1492,18 @@ export default async function Dashboard() {
             font-size: 11px;
           }
 
-          @media (max-width: 1100px) {
+          /*
+           * =====================================================
+           * ADMIN / TEACHER DASHBOARD
+           * =====================================================
+           */
 
+          .admin-dashboard-page {
+            min-height: 100vh;
+            background: #f5f7fb;
+          }
+
+          @media (max-width: 1100px) {
             .student-statistics {
               grid-template-columns: repeat(2, 1fr);
             }
@@ -1610,18 +1516,16 @@ export default async function Dashboard() {
               display: grid;
               grid-template-columns: repeat(2, 1fr);
             }
-
           }
 
           @media (max-width: 760px) {
-
             .student-container {
               padding: 20px 16px;
             }
 
             .student-header-inner {
-              padding: 10px 16px;
               min-height: 72px;
+              padding: 10px 16px;
             }
 
             .student-brand-logo {
@@ -1721,11 +1625,9 @@ export default async function Dashboard() {
               align-items: flex-start;
               padding: 22px 16px;
             }
-
           }
 
           @media (max-width: 480px) {
-
             .student-statistics {
               grid-template-columns: 1fr;
             }
@@ -1746,11 +1648,8 @@ export default async function Dashboard() {
             .result-grade {
               display: none;
             }
-
           }
-
         `}</style>
-
       </main>
     )
   }
@@ -1771,14 +1670,12 @@ export default async function Dashboard() {
           'Inter, ui-sans-serif, system-ui, sans-serif',
       }}
     >
-
       <div
         style={{
           maxWidth: '1200px',
           margin: '0 auto',
         }}
       >
-
         <div
           style={{
             display: 'flex',
@@ -1788,9 +1685,7 @@ export default async function Dashboard() {
             marginBottom: '35px',
           }}
         >
-
           <div>
-
             <h1
               style={{
                 margin: 0,
@@ -1810,13 +1705,10 @@ export default async function Dashboard() {
             >
               Welcome, {displayName}
             </p>
-
           </div>
 
           <LogoutButton />
-
         </div>
-
 
         <section
           style={{
@@ -1826,7 +1718,6 @@ export default async function Dashboard() {
             gap: '20px',
           }}
         >
-
           <Link
             href="/dashboard/students"
             style={{
@@ -1840,7 +1731,6 @@ export default async function Dashboard() {
                 '0 8px 24px rgba(23,32,51,.05)',
             }}
           >
-
             <div
               style={{
                 fontSize: '30px',
@@ -1869,9 +1759,7 @@ export default async function Dashboard() {
             >
               Manage student accounts and profiles.
             </p>
-
           </Link>
-
 
           <Link
             href="/dashboard/questions"
@@ -1886,7 +1774,6 @@ export default async function Dashboard() {
                 '0 8px 24px rgba(23,32,51,.05)',
             }}
           >
-
             <div
               style={{
                 fontSize: '30px',
@@ -1915,9 +1802,7 @@ export default async function Dashboard() {
             >
               Create and manage assessment questions.
             </p>
-
           </Link>
-
 
           <Link
             href="/dashboard/assessments"
@@ -1932,7 +1817,6 @@ export default async function Dashboard() {
                 '0 8px 24px rgba(23,32,51,.05)',
             }}
           >
-
             <div
               style={{
                 fontSize: '30px',
@@ -1961,9 +1845,7 @@ export default async function Dashboard() {
             >
               Create, assign and manage assessments.
             </p>
-
           </Link>
-
 
           <Link
             href="/dashboard/results"
@@ -1978,7 +1860,6 @@ export default async function Dashboard() {
                 '0 8px 24px rgba(23,32,51,.05)',
             }}
           >
-
             <div
               style={{
                 fontSize: '30px',
@@ -2007,14 +1888,52 @@ export default async function Dashboard() {
             >
               Review student assessment results.
             </p>
-
           </Link>
+          <Link
+            href="/dashboard/parent-registrations"
+            style={{
+              textDecoration: 'none',
+              color: 'inherit',
+              background: '#ffffff',
+              border: '1px solid #e5e9f0',
+              borderRadius: '16px',
+              padding: '25px',
+              boxShadow:
+                '0 8px 24px rgba(23,32,51,.05)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '30px',
+                marginBottom: '12px',
+              }}
+            >
+              👨‍👩‍👧‍👦
+            </div>
 
+            <h2
+              style={{
+                margin: 0,
+                fontSize: '18px',
+                color: '#172033',
+              }}
+            >
+              Parent Registrations
+            </h2>
+
+            <p
+              style={{
+                margin: '7px 0 0',
+                color: '#718096',
+                fontSize: '13px',
+                lineHeight: 1.6,
+              }}
+            >
+              Review and manage parent enquiries and registrations.
+            </p>
+          </Link>
         </section>
-
       </div>
-
     </main>
   )
 }
-

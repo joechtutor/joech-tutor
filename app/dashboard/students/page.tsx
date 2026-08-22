@@ -22,6 +22,9 @@ export default function StudentsPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  const [parentRegistrationId, setParentRegistrationId] =
+    useState('')
+
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -56,6 +59,33 @@ export default function StudentsPage() {
 
   useEffect(() => {
     loadStudents()
+  }, [])
+
+  useEffect(() => {
+    const params = new URLSearchParams(
+      window.location.search
+    )
+
+    const registrationId =
+      params.get('parent_registration_id') || ''
+
+    const studentName =
+      params.get('student_name') || ''
+
+    const registrationGrade =
+      params.get('grade') || ''
+
+    setParentRegistrationId(
+      registrationId
+    )
+
+    if (studentName) {
+      setFullName(studentName)
+    }
+
+    if (registrationGrade) {
+      setGrade(registrationGrade)
+    }
   }, [])
 
   async function addStudent(e: FormEvent) {
@@ -96,6 +126,8 @@ export default function StudentsPage() {
             email: email.trim(),
             password,
             grade: Number(grade),
+            parent_registration_id:
+              parentRegistrationId || undefined,
           }),
         }
       )
@@ -110,13 +142,15 @@ export default function StudentsPage() {
       }
 
       setMessage(
-        'Student created successfully.'
+        result.message ||
+          'Student created successfully.'
       )
 
       setFullName('')
       setEmail('')
       setPassword('')
       setGrade('')
+      setParentRegistrationId('')
 
       await loadStudents()
     } catch (err) {

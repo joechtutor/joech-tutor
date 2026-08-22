@@ -8,6 +8,7 @@ const StudentSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).max(100),
   grade: z.number().int().min(5).max(9),
+  parent_registration_id: z.string().uuid().optional(),
 })
 
 async function requireStaff() {
@@ -31,9 +32,6 @@ async function requireStaff() {
     }
   }
 
-  /*
-   * Use the admin client to verify the role.
-   */
   const admin = supabaseAdmin()
 
   const {
@@ -88,12 +86,15 @@ async function requireStaff() {
 }
 
 /*
+ * ============================================================
  * GET
  *
  * Retrieve all students.
  *
  * Admin and teacher only.
+ * ============================================================
  */
+
 export async function GET() {
   try {
     const auth = await requireStaff()
@@ -143,16 +144,9 @@ export async function GET() {
       (students || []).map(
         (student: any) => ({
           id: student.id,
-
-          profile_id:
-            student.profile_id,
-
-          grade:
-            student.grade,
-
-          created_at:
-            student.created_at,
-
+          profile_id: student.profile_id,
+          grade: student.grade,
+          created_at: student.created_at,
           profiles:
             student.profiles ||
             null,
@@ -187,12 +181,22 @@ export async function GET() {
 }
 
 /*
+ * ============================================================
  * POST
  *
  * Create a new student.
  *
  * Admin and teacher only.
+ *
+ * Optional:
+ * parent_registration_id
+ *
+ * When supplied, the registration must already be approved.
+ * After the student is successfully created, the registration
+ * is linked to the new student and marked student_created.
+ * ============================================================
  */
+
 export async function POST(
   req: Request
 ) {
@@ -204,7 +208,10 @@ export async function POST(
       return auth.error
     }
 
-    const { admin } = auth
+    const {
+      admin,
+      user,
+    } = auth
 
     const json =
       await req.json()
@@ -217,7 +224,6 @@ export async function POST(
         {
           error:
             'Invalid student information',
-
           details:
             body.error.flatten(),
         },
@@ -232,11 +238,107 @@ export async function POST(
       email,
       password,
       grade,
+      parent_registration_id,
     } = body.data
 
     /*
-     * Create authentication account.
+     * ========================================================
+     * PARENT REGISTRATION VALIDATION
+     * ========================================================
      */
+
+    if (parent_registration_id) {
+      const {
+        data: registration,
+        error: registrationError,
+      } = await admin
+        .from('parent_registrations')
+        .select(
+          'id, student_full_name, status, created_student_id'
+        )
+        .eq(
+          'id',
+          parent_registration_id
+        )
+        .single()
+
+      if (
+        registrationError ||
+        !registration
+      ) {
+        console.error(
+          'Parent registration lookup error:',
+          registrationError
+        )
+
+        return NextResponse.json(
+          {
+            error:
+              'Parent registration could not be found.',
+          },
+          {
+            status: 404,
+          }
+        )
+      }
+
+      if (
+        registration.status !==
+        'approved'
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Only approved parent registrations can be linked to a student account.',
+          },
+          {
+            status: 400,
+          }
+        )
+      }
+
+      if (
+        registration.created_student_id
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'A student account has already been linked to this registration.',
+          },
+          {
+            status: 400,
+          }
+        )
+      }
+
+      /*
+       * Make sure the student name being created
+       * matches the approved registration.
+       */
+      if (
+        full_name.trim().toLowerCase() !==
+        registration.student_full_name
+          .trim()
+          .toLowerCase()
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'The student name does not match the approved parent registration.',
+          },
+          {
+            status: 400,
+          }
+        )
+      }
+    }
+
+    /*
+     * ========================================================
+     * CREATE AUTHENTICATION ACCOUNT
+     * ========================================================
+     */
+
     const {
       data: authData,
       error: authError,
@@ -274,8 +376,11 @@ export async function POST(
       authData.user.id
 
     /*
-     * Create profile.
+     * ========================================================
+     * CREATE PROFILE
+     * ========================================================
      */
+
     const {
       error: profileError,
     } = await admin
@@ -292,10 +397,6 @@ export async function POST(
         profileError
       )
 
-      /*
-       * Roll back authentication
-       * account if profile creation fails.
-       */
       await admin.auth.admin.deleteUser(
         studentUserId
       )
@@ -312,8 +413,11 @@ export async function POST(
     }
 
     /*
-     * Create student record.
+     * ========================================================
+     * CREATE STUDENT RECORD
+     * ========================================================
      */
+
     const {
       data: student,
       error: studentError,
@@ -322,7 +426,6 @@ export async function POST(
       .insert({
         profile_id:
           studentUserId,
-
         grade,
       })
       .select(
@@ -336,9 +439,6 @@ export async function POST(
         studentError
       )
 
-      /*
-       * Roll back profile.
-       */
       await admin
         .from('profiles')
         .delete()
@@ -347,10 +447,6 @@ export async function POST(
           studentUserId
         )
 
-      /*
-       * Roll back authentication
-       * account.
-       */
       await admin.auth.admin.deleteUser(
         studentUserId
       )
@@ -366,11 +462,91 @@ export async function POST(
       )
     }
 
+    /*
+     * ========================================================
+     * LINK STUDENT TO PARENT REGISTRATION
+     * ========================================================
+     */
+
+    if (parent_registration_id) {
+      const {
+        error:
+          registrationUpdateError,
+      } = await admin
+        .from('parent_registrations')
+        .update({
+          created_student_id:
+            student.id,
+          status:
+            'student_created',
+          reviewed_at:
+            new Date().toISOString(),
+          reviewed_by:
+            user.id,
+        })
+        .eq(
+          'id',
+          parent_registration_id
+        )
+
+      if (
+        registrationUpdateError
+      ) {
+        console.error(
+          'Parent registration linking error:',
+          registrationUpdateError
+        )
+
+        /*
+         * Roll back the newly-created
+         * student account if the registration
+         * cannot be linked.
+         */
+
+        await admin
+          .from('students')
+          .delete()
+          .eq(
+            'id',
+            student.id
+          )
+
+        await admin
+          .from('profiles')
+          .delete()
+          .eq(
+            'id',
+            studentUserId
+          )
+
+        await admin.auth.admin.deleteUser(
+          studentUserId
+        )
+
+        return NextResponse.json(
+          {
+            error:
+              'The student account was not created because the parent registration could not be linked.',
+          },
+          {
+            status: 400,
+          }
+        )
+      }
+    }
+
+    /*
+     * ========================================================
+     * SUCCESS
+     * ========================================================
+     */
+
     return NextResponse.json(
       {
         message:
-          'Student created successfully',
-
+          parent_registration_id
+            ? 'Student created and parent registration linked successfully.'
+            : 'Student created successfully.',
         student,
       },
       {
@@ -396,23 +572,13 @@ export async function POST(
 }
 
 /*
+ * ============================================================
  * DELETE
  *
  * Delete a student completely.
- *
- * This removes:
- *
- * 1. Student assessment attempts/results
- * 2. Student record
- * 3. Student profile
- * 4. Supabase Auth account
- *
- * Assessment assignments are automatically
- * removed because assessment_assignments.student_id
- * uses ON DELETE CASCADE.
- *
- * Admin and teacher only.
+ * ============================================================
  */
+
 export async function DELETE(
   req: Request
 ) {
@@ -426,13 +592,6 @@ export async function DELETE(
 
     const { admin } = auth
 
-    /*
-     * Get student ID.
-     *
-     * The frontend can send:
-     *
-     * /api/students?id=STUDENT_ID
-     */
     const url =
       new URL(req.url)
 
@@ -453,9 +612,6 @@ export async function DELETE(
       )
     }
 
-    /*
-     * Validate UUID.
-     */
     const uuidResult =
       z.string().uuid().safeParse(
         studentId
@@ -473,9 +629,6 @@ export async function DELETE(
       )
     }
 
-    /*
-     * Find the student.
-     */
     const {
       data: student,
       error: studentError,
@@ -514,15 +667,7 @@ export async function DELETE(
       student.profile_id
 
     /*
-     * STEP 1
-     *
-     * Delete all assessment attempts/results
-     * belonging to the student.
-     *
-     * This is required because:
-     *
-     * attempts.user_id references profiles.id
-     * without ON DELETE CASCADE.
+     * Delete attempts/results first.
      */
     if (profileId) {
       const {
@@ -554,14 +699,7 @@ export async function DELETE(
     }
 
     /*
-     * STEP 2
-     *
-     * Delete the student record.
-     *
-     * assessment_assignments.student_id
-     * has ON DELETE CASCADE, so all assignments
-     * belonging to this student will also be
-     * removed automatically.
+     * Delete student record.
      */
     const {
       error: deleteStudentError,
@@ -591,13 +729,12 @@ export async function DELETE(
     }
 
     /*
-     * STEP 3
-     *
-     * Delete the student's profile.
+     * Delete profile.
      */
     if (profileId) {
       const {
-        error: profileDeleteError,
+        error:
+          profileDeleteError,
       } = await admin
         .from('profiles')
         .delete()
@@ -611,24 +748,14 @@ export async function DELETE(
           'Student profile deletion error:',
           profileDeleteError
         )
-
-        /*
-         * At this point the student record
-         * has already been removed.
-         *
-         * The authentication account is still
-         * removed below.
-         */
       }
 
       /*
-       * STEP 4
-       *
-       * Delete the Supabase authentication
-       * account.
+       * Delete authentication account.
        */
       const {
-        error: authDeleteError,
+        error:
+          authDeleteError,
       } =
         await admin.auth.admin.deleteUser(
           profileId
@@ -654,9 +781,6 @@ export async function DELETE(
       }
     }
 
-    /*
-     * SUCCESS
-     */
     return NextResponse.json(
       {
         message:
