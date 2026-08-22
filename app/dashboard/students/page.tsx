@@ -17,6 +17,8 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -31,6 +33,7 @@ export default function StudentsPage() {
       setError('')
 
       const response = await fetch('/api/students')
+
       const result = await response.json()
 
       if (!response.ok) {
@@ -72,35 +75,43 @@ export default function StudentsPage() {
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
+      setError(
+        'Password must be at least 8 characters.'
+      )
       return
     }
 
     try {
       setSaving(true)
 
-      const response = await fetch('/api/students', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          full_name: fullName.trim(),
-          email: email.trim(),
-          password,
-          grade: Number(grade),
-        }),
-      })
+      const response = await fetch(
+        '/api/students',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            full_name: fullName.trim(),
+            email: email.trim(),
+            password,
+            grade: Number(grade),
+          }),
+        }
+      )
 
       const result = await response.json()
 
       if (!response.ok) {
         throw new Error(
-          result.error || 'Unable to create student'
+          result.error ||
+            'Unable to create student'
         )
       }
 
-      setMessage('Student created successfully.')
+      setMessage(
+        'Student created successfully.'
+      )
 
       setFullName('')
       setEmail('')
@@ -119,9 +130,70 @@ export default function StudentsPage() {
     }
   }
 
-  const grade8Students = students.filter(
-    (student) => student.grade === 8
-  ).length
+  async function deleteStudent(
+    student: Student
+  ) {
+    const name =
+      student.profiles?.full_name ||
+      'this student'
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${name}?\n\nThis will permanently remove the student's account, profile, results, and assessment assignments.\n\nThis action cannot be undone.`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      setDeletingId(student.id)
+      setMessage('')
+      setError('')
+
+      const response = await fetch(
+        `/api/students?id=${encodeURIComponent(
+          student.id
+        )}`,
+        {
+          method: 'DELETE',
+        }
+      )
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+            'Unable to delete student'
+        )
+      }
+
+      setStudents((currentStudents) =>
+        currentStudents.filter(
+          (item) =>
+            item.id !== student.id
+        )
+      )
+
+      setMessage(
+        `${name} was deleted successfully.`
+      )
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to delete student'
+      )
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const grade8Students =
+    students.filter(
+      (student) =>
+        student.grade === 8
+    ).length
 
   return (
     <>
@@ -184,7 +256,8 @@ export default function StudentsPage() {
           height: 54px;
           object-fit: cover;
           border-radius: 12px;
-          box-shadow: 0 5px 15px rgba(32, 20, 75, 0.18);
+          box-shadow:
+            0 5px 15px rgba(32, 20, 75, 0.18);
         }
 
         .brand-name {
@@ -243,7 +316,8 @@ export default function StudentsPage() {
 
         .layout {
           display: grid;
-          grid-template-columns: 235px minmax(0, 1fr);
+          grid-template-columns:
+            235px minmax(0, 1fr);
           min-height: calc(100vh - 82px);
         }
 
@@ -289,19 +363,22 @@ export default function StudentsPage() {
         }
 
         .nav-link:hover {
-          background: rgba(255, 255, 255, 0.09);
+          background:
+            rgba(255, 255, 255, 0.09);
           color: white;
         }
 
         .nav-link.active {
-          background: linear-gradient(
-            90deg,
-            #6942bb,
-            #55309d
-          );
+          background:
+            linear-gradient(
+              90deg,
+              #6942bb,
+              #55309d
+            );
           color: white;
           box-shadow:
-            0 8px 20px rgba(16, 8, 39, 0.22);
+            0 8px 20px
+              rgba(16, 8, 39, 0.22);
         }
 
         .nav-icon {
@@ -310,7 +387,8 @@ export default function StudentsPage() {
           display: grid;
           place-items: center;
           border-radius: 8px;
-          background: rgba(255, 255, 255, 0.1);
+          background:
+            rgba(255, 255, 255, 0.1);
           font-size: 13px;
         }
 
@@ -362,7 +440,9 @@ export default function StudentsPage() {
           font-size: 13px;
           font-weight: 700;
           text-decoration: none;
-          box-shadow: 0 8px 18px rgba(77, 42, 154, 0.2);
+          box-shadow:
+            0 8px 18px
+              rgba(77, 42, 154, 0.2);
         }
 
         .stats {
@@ -379,7 +459,8 @@ export default function StudentsPage() {
           border-radius: 16px;
           padding: 20px;
           box-shadow:
-            0 5px 20px rgba(35, 27, 58, 0.045);
+            0 5px 20px
+              rgba(35, 27, 58, 0.045);
           position: relative;
           overflow: hidden;
         }
@@ -392,7 +473,8 @@ export default function StudentsPage() {
           right: -20px;
           bottom: -20px;
           border-radius: 50%;
-          background: rgba(88, 54, 159, 0.07);
+          background:
+            rgba(88, 54, 159, 0.07);
         }
 
         .stat-label {
@@ -421,7 +503,8 @@ export default function StudentsPage() {
           padding: 25px;
           margin-bottom: 25px;
           box-shadow:
-            0 5px 22px rgba(35, 27, 58, 0.045);
+            0 5px 22px
+              rgba(35, 27, 58, 0.045);
         }
 
         .section-heading {
@@ -485,7 +568,8 @@ export default function StudentsPage() {
           background: white;
           border-color: #7048b7;
           box-shadow:
-            0 0 0 3px rgba(112, 72, 183, 0.1);
+            0 0 0 3px
+              rgba(112, 72, 183, 0.1);
         }
 
         .form-footer {
@@ -506,7 +590,7 @@ export default function StudentsPage() {
         .button {
           border: 0;
           border-radius: 9px;
-          padding: 11px 17px;
+          padding: 10px 13px;
           font-size: 12px;
           font-weight: 800;
           text-decoration: none;
@@ -526,7 +610,8 @@ export default function StudentsPage() {
           background: #4d2a9a;
           color: white;
           box-shadow:
-            0 7px 16px rgba(77, 42, 154, 0.2);
+            0 7px 16px
+              rgba(77, 42, 154, 0.2);
         }
 
         .button-primary:hover:not(:disabled) {
@@ -541,6 +626,19 @@ export default function StudentsPage() {
 
         .button-secondary:hover {
           background: #e7def8;
+        }
+
+        .button-delete {
+          background: #fff1f1;
+          color: #b42323;
+          border: 1px solid #f2cccc;
+          margin-left: 7px;
+        }
+
+        .button-delete:hover:not(:disabled) {
+          background: #ffe0e0;
+          border-color: #e9aaaa;
+          color: #941c1c;
         }
 
         .message {
@@ -568,7 +666,7 @@ export default function StudentsPage() {
 
         .students-table {
           width: 100%;
-          min-width: 720px;
+          min-width: 850px;
           border-collapse: collapse;
         }
 
@@ -639,6 +737,13 @@ export default function StudentsPage() {
 
         .date-text {
           color: #777381;
+        }
+
+        .action-buttons {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
         }
 
         .loading,
@@ -1055,8 +1160,9 @@ export default function StudentsPage() {
                   </h2>
 
                   <p>
-                    View students currently
-                    registered on the platform.
+                    View and manage students
+                    currently registered on the
+                    platform.
                   </p>
                 </div>
 
@@ -1077,7 +1183,9 @@ export default function StudentsPage() {
                   <strong>
                     No students registered yet.
                   </strong>
+
                   <br />
+
                   Use the form above to add
                   your first student.
                 </div>
@@ -1134,6 +1242,10 @@ export default function StudentsPage() {
                               .slice(0, 2)
                               .toUpperCase()
 
+                          const isDeleting =
+                            deletingId ===
+                            student.id
+
                           return (
                             <tr
                               key={
@@ -1184,12 +1296,33 @@ export default function StudentsPage() {
                               </td>
 
                               <td>
-                                <Link
-                                  href={`/dashboard/students/${student.id}`}
-                                  className="button button-secondary"
-                                >
-                                  View Profile
-                                </Link>
+                                <div className="action-buttons">
+                                  <Link
+                                    href={`/dashboard/students/${student.id}`}
+                                    className="button button-secondary"
+                                  >
+                                    View Profile
+                                  </Link>
+
+                                  <button
+                                    type="button"
+                                    className="button button-delete"
+                                    disabled={
+                                      isDeleting ||
+                                      deletingId !==
+                                        null
+                                    }
+                                    onClick={() =>
+                                      deleteStudent(
+                                        student
+                                      )
+                                    }
+                                  >
+                                    {isDeleting
+                                      ? 'Deleting...'
+                                      : 'Delete'}
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           )

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -21,12 +21,16 @@ type Assessment = {
 }
 
 export default function TakeAssessmentPage() {
-  const params = useParams()
+
   const router = useRouter()
 
-  const assessmentId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id
+const params = useParams<{
+  id?: string | string[]
+}>()
+
+const assessmentId = Array.isArray(params?.id)
+  ? params.id[0]
+  : params?.id || ''
 
   const [assessment, setAssessment] =
     useState<Assessment | null>(null)
@@ -372,7 +376,7 @@ export default function TakeAssessmentPage() {
                   color: '#555',
                 }}
               >
-                {assessment.subject} •
+                {assessment.subject} â€¢
                 Grade {assessment.grade}
               </p>
             </div>
@@ -541,7 +545,7 @@ export default function TakeAssessmentPage() {
                 color: '#666',
               }}
             >
-              {question.topic} •{' '}
+              {question.topic} â€¢{' '}
               {question.difficulty}
             </span>
           </div>
@@ -674,7 +678,7 @@ export default function TakeAssessmentPage() {
               fontWeight: 700,
             }}
           >
-            ← Previous
+            â† Previous
           </button>
 
           {currentQuestion <
@@ -706,7 +710,7 @@ export default function TakeAssessmentPage() {
                 fontWeight: 700,
               }}
             >
-              Next →
+              Next â†’
             </button>
           ) : (
             <button
@@ -841,8 +845,8 @@ export default function TakeAssessmentPage() {
               fontSize: 14,
             }}
           >
-            Green = answered • White =
-            unanswered • Dark border =
+            Green = answered â€¢ White =
+            unanswered â€¢ Dark border =
             current question
           </p>
         </section>

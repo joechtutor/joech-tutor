@@ -1,7 +1,10 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import {
+  useParams,
+  useRouter,
+} from 'next/navigation'
 
 type Result = {
   score: number
@@ -11,10 +14,15 @@ type Result = {
 }
 
 export default function AssessmentResultPage() {
-  const params = useParams()
-  const router = useRouter()
+const params = useParams<{
+  id?: string | string[]
+}>()
 
-  const assessmentId = params.id as string
+const router = useRouter()
+
+const assessmentId = Array.isArray(params?.id)
+  ? params.id[0]
+  : params?.id || ''
 
   const [result, setResult] = useState<Result | null>(null)
   const [loading, setLoading] = useState(true)

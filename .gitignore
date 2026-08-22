@@ -38,3 +38,5 @@ attempt.assessment_id
 attempt.user_id
 notepad
 type
+.vercel
+.env*

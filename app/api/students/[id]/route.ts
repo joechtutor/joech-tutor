@@ -132,6 +132,10 @@ export async function GET(
 
     /*
      * GET STUDENT PROFILE
+     *
+     * IMPORTANT:
+     * The profiles table does NOT contain email.
+     * Email belongs to the Supabase Auth user.
      */
     const {
       data: profile,
@@ -139,7 +143,7 @@ export async function GET(
     } = await admin
       .from('profiles')
       .select(
-        'id, full_name, email, role'
+        'id, full_name, role'
       )
       .eq('id', student.profile_id)
       .single()
@@ -152,16 +156,49 @@ export async function GET(
     }
 
     /*
+     * GET STUDENT EMAIL FROM SUPABASE AUTH
+     */
+    let studentEmail: string | null = null
+
+    try {
+      const {
+        data: authUser,
+        error: authUserError,
+      } = await admin.auth.admin.getUserById(
+        student.profile_id
+      )
+
+      if (authUserError) {
+        console.error(
+          'Student auth lookup error:',
+          authUserError
+        )
+      } else {
+        studentEmail =
+          authUser.user?.email || null
+      }
+    } catch (error) {
+      console.error(
+        'Student email lookup error:',
+        error
+      )
+    }
+
+    /*
      * BUILD STUDENT OBJECT
      */
     const studentResult = {
       id: student.id,
+
       full_name:
         profile?.full_name || null,
+
       email:
-        profile?.email || null,
+        studentEmail,
+
       grade:
         student.grade || null,
+
       created_at:
         student.created_at || null,
     }
@@ -216,7 +253,12 @@ export async function GET(
         )
       )
 
-    let attemptAssessments: any[] = []
+    let attemptAssessments: Array<{
+      id: string
+      title: string
+      subject: string
+      grade: number
+    }> = []
 
     if (
       attemptAssessmentIds.length > 0
@@ -263,16 +305,21 @@ export async function GET(
 
           return {
             id: attempt.id,
+
             title:
               assessment?.title ||
               'Assessment',
+
             subject:
               assessment?.subject ||
               'N/A',
+
             score:
               Number(attempt.score) || 0,
+
             letter:
               attempt.letter || 'F',
+
             submitted_at:
               attempt.submitted_at ||
               null,
@@ -322,8 +369,13 @@ export async function GET(
         )
       )
 
-    let assignmentAssessments: any[] =
-      []
+    let assignmentAssessments: Array<{
+      id: string
+      title: string
+      subject: string
+      grade: number
+      duration_minutes?: number
+    }> = []
 
     if (
       assignmentAssessmentIds.length > 0
@@ -359,8 +411,8 @@ export async function GET(
     /*
      * BUILD ASSIGNED ASSESSMENTS
      *
-     * This also matches exactly what
-     * the Student Profile page expects.
+     * This matches exactly what the
+     * Student Profile page expects.
      */
     const assignedAssessments =
       (assignmentsData || [])
@@ -379,18 +431,33 @@ export async function GET(
 
             return {
               id: assessment.id,
+
               title:
                 assessment.title,
+
               subject:
                 assessment.subject,
+
               grade:
                 assessment.grade,
+
               assigned_at:
                 assignment.assigned_at,
             }
           }
         )
-        .filter(Boolean)
+        .filter(
+          (
+            item
+          ): item is {
+            id: string
+            title: string
+            subject: string
+            grade: number
+            assigned_at: string
+          } =>
+            item !== null
+        )
 
     /*
      * PERFORMANCE CALCULATIONS
@@ -398,7 +465,9 @@ export async function GET(
     const scores =
       completedAssessments.map(
         (assessment) =>
-          Number(assessment.score) || 0
+          Number(
+            assessment.score
+          ) || 0
       )
 
     const completed =
@@ -414,7 +483,8 @@ export async function GET(
     const averageScore =
       completed > 0
         ? Math.round(
-            totalScore / completed
+            totalScore /
+              completed
           )
         : 0
 
@@ -432,7 +502,7 @@ export async function GET(
      * A PASS IS 50% OR ABOVE.
      *
      * This matches the result pattern
-     * currently shown in your system.
+     * currently used in the system.
      */
     const passed =
       scores.filter(
@@ -449,7 +519,8 @@ export async function GET(
     const passRate =
       completed > 0
         ? Math.round(
-            (passed / completed) *
+            (passed /
+              completed) *
               100
           )
         : 0

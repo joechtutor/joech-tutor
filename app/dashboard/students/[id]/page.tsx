@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
@@ -41,11 +41,13 @@ type Performance = {
 }
 
 export default function StudentProfilePage() {
-  const params = useParams()
+const params = useParams<{
+  id?: string | string[]
+}>()
 
-  const studentId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id
+const studentId = Array.isArray(params?.id)
+  ? params.id[0]
+  : params?.id || ''
 
   const [student, setStudent] =
     useState<Student | null>(null)
@@ -258,7 +260,7 @@ export default function StudentProfilePage() {
               href="/dashboard/students"
               className="primary-button"
             >
-              ← Back to Students
+              â† Back to Students
             </Link>
           </div>
         </main>
@@ -308,7 +310,7 @@ export default function StudentProfilePage() {
               href="/dashboard/students"
               className="back-button"
             >
-              ← Back to Students
+              â† Back to Students
             </Link>
 
             <Link
@@ -425,7 +427,7 @@ export default function StudentProfilePage() {
             </div>
 
             <div className="pass-badge">
-              ✓ {passRate}% Pass Rate
+              âœ“ {passRate}% Pass Rate
             </div>
 
           </div>
@@ -454,7 +456,7 @@ export default function StudentProfilePage() {
 
             <div className="stat-card green">
               <div className="stat-icon">
-                ✓
+                âœ“
               </div>
 
               <span>
@@ -490,7 +492,7 @@ export default function StudentProfilePage() {
 
             <div className="stat-card gold">
               <div className="stat-icon">
-                ↑
+                â†‘
               </div>
 
               <span>
@@ -508,7 +510,7 @@ export default function StudentProfilePage() {
 
             <div className="stat-card red">
               <div className="stat-icon">
-                ↓
+                â†“
               </div>
 
               <span>
@@ -526,7 +528,7 @@ export default function StudentProfilePage() {
 
             <div className="stat-card green">
               <div className="stat-icon">
-                ✓
+                âœ“
               </div>
 
               <span>
@@ -775,7 +777,7 @@ export default function StudentProfilePage() {
               <div className="empty-state">
 
                 <div className="empty-icon">
-                  ✓
+                  âœ“
                 </div>
 
                 <h3>
@@ -860,7 +862,7 @@ export default function StudentProfilePage() {
                               href={`/dashboard/results/${assessment.id}`}
                               className="view-result"
                             >
-                              View Result →
+                              View Result â†’
                             </Link>
                           </td>
 

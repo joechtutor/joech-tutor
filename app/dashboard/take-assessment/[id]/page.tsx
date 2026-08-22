@@ -1,8 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import {
+  useParams,
+  useRouter,
+} from 'next/navigation'
 
 type Question = {
   id: string
@@ -30,10 +33,15 @@ type Assessment = {
 }
 
 export default function TakeAssessmentPage() {
-  const params = useParams()
-  const router = useRouter()
+ const params = useParams<{
+  id?: string | string[]
+}>()
 
-  const assessmentId = params.id as string
+const router = useRouter()
+
+const assessmentId = Array.isArray(params?.id)
+  ? params.id[0]
+  : params?.id || ''
 
   const [assessment, setAssessment] =
     useState<Assessment | null>(null)
@@ -232,7 +240,7 @@ export default function TakeAssessmentPage() {
         }}
       >
         <Link href="/dashboard/my-assessments">
-          ← Back to My Assessments
+          â† Back to My Assessments
         </Link>
 
         <h1
@@ -310,7 +318,7 @@ export default function TakeAssessmentPage() {
             }}
           >
             Grade {assessment.grade}{' '}
-            • {assessment.subject}
+            â€¢ {assessment.subject}
           </p>
         </div>
 

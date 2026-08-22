@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import './results.css'
 
@@ -45,12 +45,12 @@ type Attempt = {
 }
 
 export default function AdminResultPage() {
-  const params = useParams()
+  const params = useParams<{ id: string }>()
   const router = useRouter()
 
-  const resultId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id
+  const resultId = Array.isArray(params?.id)
+  ? params.id[0]
+  : params?.id || ''
 
   const [attempt, setAttempt] =
     useState<Attempt | null>(null)
@@ -232,7 +232,7 @@ export default function AdminResultPage() {
         <div className="joech-result-loading">
           <div className="joech-loading-card">
             <div className="joech-loading-icon">
-              📊
+              ðŸ“Š
             </div>
 
             <h2>
@@ -259,7 +259,7 @@ export default function AdminResultPage() {
         <div className="joech-main">
           <div className="joech-result-error">
             <div className="joech-error-icon">
-              ⚠
+              âš 
             </div>
 
             <span className="joech-error-label">
@@ -284,7 +284,7 @@ export default function AdminResultPage() {
                 )
               }
             >
-              ← Back to Results
+              â† Back to Results
             </button>
           </div>
         </div>
@@ -345,7 +345,7 @@ export default function AdminResultPage() {
               )
             }
           >
-            <span>←</span>
+            <span>â†</span>
             Results
           </button>
 
@@ -386,7 +386,7 @@ export default function AdminResultPage() {
               </span>
 
               <span className="joech-meta-divider">
-                •
+                â€¢
               </span>
 
               <span>
@@ -394,7 +394,7 @@ export default function AdminResultPage() {
               </span>
 
               <span className="joech-meta-divider">
-                •
+                â€¢
               </span>
 
               <span>
@@ -425,8 +425,8 @@ export default function AdminResultPage() {
               }
             >
               {passed
-                ? '✓ PASSED'
-                : '✕ FAILED'}
+                ? 'âœ“ PASSED'
+                : 'âœ• FAILED'}
             </div>
 
           </div>
@@ -463,7 +463,7 @@ export default function AdminResultPage() {
             <div className="joech-info-card">
 
               <div className="joech-info-icon">
-                👤
+                ðŸ‘¤
               </div>
 
               <div>
@@ -487,7 +487,7 @@ export default function AdminResultPage() {
             <div className="joech-info-card">
 
               <div className="joech-info-icon">
-                📚
+                ðŸ“š
               </div>
 
               <div>
@@ -505,7 +505,7 @@ export default function AdminResultPage() {
             <div className="joech-info-card">
 
               <div className="joech-info-icon">
-                🎓
+                ðŸŽ“
               </div>
 
               <div>
@@ -523,7 +523,7 @@ export default function AdminResultPage() {
             <div className="joech-info-card">
 
               <div className="joech-info-icon">
-                ⏱
+                â±
               </div>
 
               <div>
@@ -543,7 +543,7 @@ export default function AdminResultPage() {
             <div className="joech-info-card">
 
               <div className="joech-info-icon">
-                🗓
+                ðŸ—“
               </div>
 
               <div>
@@ -595,7 +595,7 @@ export default function AdminResultPage() {
               }
             >
               <span>
-                {passed ? '✓' : '✕'}
+                {passed ? 'âœ“' : 'âœ•'}
               </span>
 
               {passed
@@ -759,7 +759,7 @@ export default function AdminResultPage() {
             <div className="joech-empty-result">
 
               <div>
-                📋
+                ðŸ“‹
               </div>
 
               <strong>
@@ -807,7 +807,7 @@ export default function AdminResultPage() {
                         <small>
                           {question.topic ||
                             'General'}
-                          {' • '}
+                          {' â€¢ '}
                           {question.difficulty ||
                             'Standard'}
                         </small>
@@ -822,8 +822,8 @@ export default function AdminResultPage() {
                         }
                       >
                         {question.is_correct
-                          ? '✓ Correct'
-                          : '✕ Incorrect'}
+                          ? 'âœ“ Correct'
+                          : 'âœ• Incorrect'}
                       </div>
 
                     </div>
@@ -901,7 +901,7 @@ export default function AdminResultPage() {
 
                                 {isCorrectAnswer && (
                                   <span className="joech-correct-tag">
-                                    ✓ Correct Answer
+                                    âœ“ Correct Answer
                                   </span>
                                 )}
 
@@ -922,7 +922,7 @@ export default function AdminResultPage() {
                       <div className="joech-not-answered">
 
                         <span>
-                          ⚠
+                          âš 
                         </span>
 
                         <div>
@@ -948,7 +948,7 @@ export default function AdminResultPage() {
                       <div className="joech-professional-explanation">
 
                         <div className="joech-explanation-icon">
-                          💡
+                          ðŸ’¡
                         </div>
 
                         <div>
@@ -987,7 +987,7 @@ export default function AdminResultPage() {
           <div className="joech-feedback-header">
 
             <div className="joech-feedback-icon">
-              ✎
+              âœŽ
             </div>
 
             <div>
@@ -1050,7 +1050,7 @@ export default function AdminResultPage() {
               <div className="joech-feedback-guidance">
 
                 <span>
-                  💬
+                  ðŸ’¬
                 </span>
 
                 <div>
@@ -1077,8 +1077,8 @@ export default function AdminResultPage() {
 
                 <span>
                   {savingComment
-                    ? '⏳'
-                    : '✓'}
+                    ? 'â³'
+                    : 'âœ“'}
                 </span>
 
                 {savingComment
@@ -1107,8 +1107,8 @@ export default function AdminResultPage() {
                 {commentMessage.includes(
                   'successfully'
                 )
-                  ? '✓'
-                  : '⚠'}
+                  ? 'âœ“'
+                  : 'âš '}
               </span>
 
               {commentMessage}

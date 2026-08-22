@@ -4,6 +4,10 @@ import { supabaseAdmin } from '../../../../lib/supabase-admin'
 
 export async function GET() {
   try {
+console.log(
+  'SERVICE ROLE ENV:',
+  process.env.SUPABASE_SERVICE_ROLE_KEY ? 'PRESENT' : 'MISSING'
+)
     const supabase = await supabaseServer()
 
     const {

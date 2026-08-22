@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { supabaseServer } from '../../../../../lib/supabase-server'
 import { supabaseAdmin } from '../../../../../lib/supabase-admin'
 
+type StudentProfile = {
+  id: string
+  full_name: string | null
+}
+
 export async function GET(
   req: Request
 ) {
@@ -225,13 +230,21 @@ export async function GET(
     /*
      * Load student name directly
      * from profiles.
+     *
+     * Explicit type prevents TypeScript
+     * from treating this variable as only null.
      */
-    let studentProfile =
-      null
+    let studentProfile:
+      StudentProfile | null = null
 
+    /*
+     * If the logged-in user is the student,
+     * use that student's profile.
+     */
     if (student) {
       const {
         data: studentProfileData,
+        error: studentProfileError,
       } = await admin
         .from('profiles')
         .select(
@@ -243,6 +256,15 @@ export async function GET(
         )
         .maybeSingle()
 
+      if (
+        studentProfileError
+      ) {
+        console.error(
+          'Student profile lookup error:',
+          studentProfileError
+        )
+      }
+
       studentProfile =
         studentProfileData
     } else {
@@ -253,6 +275,7 @@ export async function GET(
        */
       const {
         data: resultStudent,
+        error: resultStudentError,
       } = await admin
         .from('students')
         .select(
@@ -264,9 +287,19 @@ export async function GET(
         )
         .maybeSingle()
 
+      if (
+        resultStudentError
+      ) {
+        console.error(
+          'Result student lookup error:',
+          resultStudentError
+        )
+      }
+
       if (resultStudent) {
         const {
           data: resultProfile,
+          error: resultProfileError,
         } = await admin
           .from('profiles')
           .select(
@@ -277,6 +310,15 @@ export async function GET(
             resultStudent.profile_id
           )
           .maybeSingle()
+
+        if (
+          resultProfileError
+        ) {
+          console.error(
+            'Result profile lookup error:',
+            resultProfileError
+          )
+        }
 
         studentProfile =
           resultProfile
@@ -322,7 +364,8 @@ export async function GET(
     }
 
     /*
-     * Load the related questions directly.
+     * Get question IDs from the
+     * student's saved answers.
      */
     const questionIds =
       (
@@ -333,9 +376,24 @@ export async function GET(
           answer.question_id
       )
 
-    let questions: any[] =
-      []
+    /*
+     * Question data type.
+     */
+    type QuestionData = {
+      id: string
+      prompt: string
+      options: string[]
+      correct_option: number | null
+      topic: string | null
+      difficulty: string | null
+    }
 
+    let questions:
+      QuestionData[] = []
+
+    /*
+     * Load the related questions.
+     */
     if (
       questionIds.length > 0
     ) {
@@ -349,7 +407,7 @@ export async function GET(
           id,
           prompt,
           options,
-          correct_answer,
+          correct_option,
           topic,
           difficulty
           `
@@ -377,7 +435,8 @@ export async function GET(
       }
 
       questions =
-        questionData || []
+        (questionData ||
+          []) as QuestionData[]
     }
 
     /*
@@ -469,6 +528,9 @@ export async function GET(
       letter = 'D'
     }
 
+    /*
+     * Return complete result.
+     */
     return NextResponse.json(
       {
         result: {

@@ -8,38 +8,67 @@ const AssignmentSchema = z.object({
   student_id: z.string().uuid(),
 })
 
+/*
+ * Authenticate the current user and verify
+ * that the user has a valid profile.
+ */
 async function getCurrentUser() {
   const supabase = await supabaseServer()
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
+
+  if (authError) {
+    console.error(
+      'Assignment authentication error:',
+      authError
+    )
+  }
 
   if (!user) {
     return {
       user: null,
       profile: null,
       errorResponse: NextResponse.json(
-        { error: 'Unauthenticated' },
-        { status: 401 }
+        {
+          error: 'Unauthenticated',
+        },
+        {
+          status: 401,
+        }
       ),
     }
   }
 
-  const { data: profile, error } =
-    await supabase
-      .from('profiles')
-      .select('role, full_name')
-      .eq('id', user.id)
-      .single()
+  const admin = supabaseAdmin()
 
-  if (error || !profile) {
+  const {
+    data: profile,
+    error: profileError,
+  } = await admin
+    .from('profiles')
+    .select('id, full_name, role')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError || !profile) {
+    console.error(
+      'Assignment profile lookup error:',
+      profileError
+    )
+
     return {
       user,
       profile: null,
       errorResponse: NextResponse.json(
-        { error: 'Profile not found' },
-        { status: 403 }
+        {
+          error: 'Profile not found',
+        },
+        {
+          status: 403,
+        }
       ),
     }
   }
@@ -55,11 +84,11 @@ async function getCurrentUser() {
  * GET
  *
  * Admin/Teacher:
- *   Returns all assignments.
+ * Returns all assignments.
  *
  * Student:
- *   Returns only assignments belonging
- *   to the logged-in student.
+ * Returns only assignments belonging
+ * to the logged-in student.
  */
 export async function GET() {
   try {
@@ -71,11 +100,12 @@ export async function GET() {
 
     const admin = supabaseAdmin()
 
-    /*
-     * Get the logged-in student's student record.
-     */
     let studentId: string | null = null
 
+    /*
+     * If this is a student, find the
+     * corresponding student record.
+     */
     if (auth.profile?.role === 'student') {
       const {
         data: student,
@@ -94,10 +124,11 @@ export async function GET() {
 
         return NextResponse.json(
           {
-            error:
-              'Student profile not found',
+            error: 'Student profile not found',
           },
-          { status: 404 }
+          {
+            status: 404,
+          }
         )
       }
 
@@ -105,8 +136,7 @@ export async function GET() {
     }
 
     /*
-     * Get assignments without using
-     * Supabase relationship embedding.
+     * Get assignments.
      */
     let assignmentsQuery = admin
       .from('assessment_assignments')
@@ -138,23 +168,25 @@ export async function GET() {
 
       return NextResponse.json(
         {
-          error:
-            assignmentsError.message,
+          error: assignmentsError.message,
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       )
     }
 
-    /*
-     * If there are no assignments,
-     * return an empty list.
-     */
-    if (!assignments || assignments.length === 0) {
+    if (
+      !assignments ||
+      assignments.length === 0
+    ) {
       return NextResponse.json(
         {
           assignments: [],
         },
-        { status: 200 }
+        {
+          status: 200,
+        }
       )
     }
 
@@ -171,7 +203,7 @@ export async function GET() {
     ]
 
     /*
-     * Load assessments separately.
+     * Load assessments.
      */
     const {
       data: assessments,
@@ -181,7 +213,10 @@ export async function GET() {
       .select(
         'id, title, subject, grade, duration_minutes'
       )
-      .in('id', assessmentIds)
+      .in(
+        'id',
+        assessmentIds
+      )
 
     if (assessmentsError) {
       console.error(
@@ -194,12 +229,15 @@ export async function GET() {
           error:
             assessmentsError.message,
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       )
     }
 
     /*
-     * Get question counts for the assessments.
+     * Load assessment questions so we
+     * can calculate question counts.
      */
     const {
       data: assessmentQuestions,
@@ -226,16 +264,14 @@ export async function GET() {
           error:
             assessmentQuestionsError.message,
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       )
     }
 
     /*
-     * For admin/teacher, load student names.
-     *
-     * We do this separately to avoid
-     * the ambiguous students/profiles
-     * relationship.
+     * Load students.
      */
     const studentIds = [
       ...new Set(
@@ -254,7 +290,10 @@ export async function GET() {
       .select(
         'id, profile_id, grade'
       )
-      .in('id', studentIds)
+      .in(
+        'id',
+        studentIds
+      )
 
     if (studentsError) {
       console.error(
@@ -267,10 +306,15 @@ export async function GET() {
           error:
             studentsError.message,
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       )
     }
 
+    /*
+     * Load student profiles.
+     */
     const profileIds = [
       ...new Set(
         (students || [])
@@ -285,7 +329,6 @@ export async function GET() {
     let profiles: {
       id: string
       full_name: string | null
-      email: string | null
     }[] = []
 
     if (profileIds.length > 0) {
@@ -295,9 +338,12 @@ export async function GET() {
       } = await admin
         .from('profiles')
         .select(
-          'id, full_name, email'
+          'id, full_name'
         )
-        .in('id', profileIds)
+        .in(
+          'id',
+          profileIds
+        )
 
       if (profilesError) {
         console.error(
@@ -305,125 +351,136 @@ export async function GET() {
           profilesError
         )
       } else {
-        profiles = profileData || []
+        profiles =
+          profileData || []
       }
     }
 
     /*
-     * Create quick lookup maps.
+     * Create lookup maps.
      */
-    const assessmentMap = new Map(
-      (assessments || []).map(
-        (assessment) => [
-          assessment.id,
-          assessment,
-        ]
+    const assessmentMap =
+      new Map(
+        (assessments || []).map(
+          (assessment) => [
+            assessment.id,
+            assessment,
+          ]
+        )
       )
-    )
 
     const questionCountMap =
       new Map<string, number>()
 
-    for (const item of
-      assessmentQuestions || []) {
+    for (
+      const item of
+        assessmentQuestions || []
+    ) {
       questionCountMap.set(
         item.assessment_id,
-        (questionCountMap.get(
-          item.assessment_id
-        ) || 0) + 1
+        (
+          questionCountMap.get(
+            item.assessment_id
+          ) || 0
+        ) + 1
       )
     }
 
-    const studentMap = new Map(
-      (students || []).map(
-        (student) => [
-          student.id,
-          student,
-        ]
+    const studentMap =
+      new Map(
+        (students || []).map(
+          (student) => [
+            student.id,
+            student,
+          ]
+        )
       )
-    )
 
-    const profileMap = new Map(
-      profiles.map(
-        (profile) => [
-          profile.id,
-          profile,
-        ]
+    const profileMap =
+      new Map(
+        profiles.map(
+          (profile) => [
+            profile.id,
+            profile,
+          ]
+        )
       )
-    )
 
     /*
-     * Build the final response.
+     * Build final response.
      */
-    const result = assignments.map(
-      (assignment) => {
-        const assessment =
-          assessmentMap.get(
-            assignment.assessment_id
-          )
-
-        const student =
-          studentMap.get(
-            assignment.student_id
-          )
-
-        const profile = student
-          ? profileMap.get(
-              student.profile_id
-            )
-          : null
-
-        return {
-          assessment_id:
-            assignment.assessment_id,
-
-          student_id:
-            assignment.student_id,
-
-          assigned_by:
-            assignment.assigned_by,
-
-          assigned_at:
-            assignment.assigned_at,
-
-          assessment_title:
-            assessment?.title ||
-            'Assessment',
-
-          subject:
-            assessment?.subject ||
-            '-',
-
-          grade:
-            assessment?.grade ??
-            student?.grade ??
-            null,
-
-          duration_minutes:
-            assessment?.duration_minutes ??
-            null,
-
-          question_count:
-            questionCountMap.get(
+    const result =
+      assignments.map(
+        (assignment) => {
+          const assessment =
+            assessmentMap.get(
               assignment.assessment_id
-            ) || 0,
+            )
 
-          student_name:
-            profile?.full_name ||
-            'Student',
+          const student =
+            studentMap.get(
+              assignment.student_id
+            )
 
-          student_email:
-            profile?.email ||
-            null,
+          const profile =
+            student
+              ? profileMap.get(
+                  student.profile_id
+                )
+              : null
+
+          return {
+            assessment_id:
+              assignment.assessment_id,
+
+            student_id:
+              assignment.student_id,
+
+            assigned_by:
+              assignment.assigned_by,
+
+            assigned_at:
+              assignment.assigned_at,
+
+            assessment_title:
+              assessment?.title ||
+              'Assessment',
+
+            subject:
+              assessment?.subject ||
+              '-',
+
+            grade:
+              assessment?.grade ??
+              student?.grade ??
+              null,
+
+            duration_minutes:
+              assessment?.duration_minutes ??
+              null,
+
+            question_count:
+              questionCountMap.get(
+                assignment.assessment_id
+              ) || 0,
+
+            student_name:
+              profile?.full_name ||
+              'Student',
+
+            student_email:
+              null,
+          }
         }
-      }
-    )
+      )
 
     return NextResponse.json(
       {
         assignments: result,
       },
-      { status: 200 }
+      {
+        status: 200,
+      }
     )
   } catch (error) {
     console.error(
@@ -434,9 +491,13 @@ export async function GET() {
     return NextResponse.json(
       {
         error:
-          'An unexpected error occurred',
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     )
   }
 }
@@ -445,7 +506,6 @@ export async function GET() {
  * POST
  *
  * Admin/Teacher only.
- * Assign an assessment to a student.
  */
 export async function POST(
   req: Request
@@ -465,10 +525,11 @@ export async function POST(
     ) {
       return NextResponse.json(
         {
-          error:
-            'Forbidden',
+          error: 'Forbidden',
         },
-        { status: 403 }
+        {
+          status: 403,
+        }
       )
     }
 
@@ -485,7 +546,9 @@ export async function POST(
           details:
             body.error.flatten(),
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       )
     }
 
@@ -498,15 +561,20 @@ export async function POST(
       supabaseAdmin()
 
     /*
-     * Check student.
+     * Verify student.
      */
     const {
       data: student,
       error: studentError,
     } = await admin
       .from('students')
-      .select('id, grade')
-      .eq('id', student_id)
+      .select(
+        'id, grade'
+      )
+      .eq(
+        'id',
+        student_id
+      )
       .single()
 
     if (
@@ -518,12 +586,14 @@ export async function POST(
           error:
             'Student not found',
         },
-        { status: 404 }
+        {
+          status: 404,
+        }
       )
     }
 
     /*
-     * Check assessment.
+     * Verify assessment.
      */
     const {
       data: assessment,
@@ -534,7 +604,10 @@ export async function POST(
       .select(
         'id, grade, title'
       )
-      .eq('id', assessment_id)
+      .eq(
+        'id',
+        assessment_id
+      )
       .single()
 
     if (
@@ -546,12 +619,14 @@ export async function POST(
           error:
             'Assessment not found',
         },
-        { status: 404 }
+        {
+          status: 404,
+        }
       )
     }
 
     /*
-     * Make sure grades match.
+     * Ensure grades match.
      */
     if (
       student.grade !==
@@ -562,7 +637,9 @@ export async function POST(
           error:
             'The student grade does not match the assessment grade.',
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       )
     }
 
@@ -596,7 +673,9 @@ export async function POST(
             error:
               'This assessment is already assigned to this student.',
           },
-          { status: 409 }
+          {
+            status: 409,
+          }
         )
       }
 
@@ -605,7 +684,9 @@ export async function POST(
           error:
             assignmentError.message,
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       )
     }
 
@@ -615,7 +696,9 @@ export async function POST(
           'Assessment assigned successfully',
         assignment,
       },
-      { status: 201 }
+      {
+        status: 201,
+      }
     )
   } catch (error) {
     console.error(
@@ -626,9 +709,13 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          'An unexpected error occurred',
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     )
   }
 }
