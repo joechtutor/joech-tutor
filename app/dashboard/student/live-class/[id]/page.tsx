@@ -113,6 +113,14 @@ export default function StudentLiveClassPage() {
 
   const [cameraEnabled, setCameraEnabled] =
     useState(true)
+const [isScreenSharing, setIsScreenSharing] =
+  useState(false)
+
+const [screenShareLoading, setScreenShareLoading] =
+  useState(false)
+
+const [screenShareError, setScreenShareError] =
+  useState('')
 
   const [teacherConnected, setTeacherConnected] =
     useState(false)
@@ -138,6 +146,14 @@ export default function StudentLiveClassPage() {
 
   const localVideoRef =
     useRef<HTMLVideoElement | null>(null)
+const screenShareVideoRef =
+  useRef<HTMLVideoElement | null>(null)
+
+const screenStreamRef =
+  useRef<MediaStream | null>(null)
+
+const screenShareActiveRef =
+  useRef(false)
 
   const teacherVideoRef =
     useRef<HTMLVideoElement | null>(null)
@@ -2672,8 +2688,7 @@ export default function StudentLiveClassPage() {
     )
   }
 
-  /*
-   * ---------------------------------------------------------
+    /*
    * CAMERA
    * ---------------------------------------------------------
    */
@@ -2711,8 +2726,68 @@ export default function StudentLiveClassPage() {
     )
   }
 
+  
+  
+
+async function startScreenShare() {
+    try {
+      setScreenShareLoading(true)
+      setScreenShareError('')
+
+      const stream =
+        await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: false,
+        })
+
+      screenStreamRef.current = stream
+      screenShareActiveRef.current = true
+      setIsScreenSharing(true)
+
+      if (screenShareVideoRef.current) {
+        screenShareVideoRef.current.srcObject = stream
+        await screenShareVideoRef.current.play().catch(() => {})
+      }
+
+      const videoTrack = stream.getVideoTracks()[0]
+
+      videoTrack.onended = () => {
+        stopScreenShare()
+      }
+    } catch (error) {
+      console.error('Screen share error:', error)
+
+      setScreenShareError(
+        'Screen sharing was cancelled or could not be started.'
+      )
+
+      setIsScreenSharing(false)
+      screenShareActiveRef.current = false
+    } finally {
+      setScreenShareLoading(false)
+    }
+  }
+
+  function stopScreenShare() {
+
+    const stream = screenStreamRef.current
+
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        track.stop()
+      })
+    }
+
+    screenStreamRef.current = null
+    screenShareActiveRef.current = false
+    setIsScreenSharing(false)
+
+    if (screenShareVideoRef.current) {
+      screenShareVideoRef.current.srcObject = null
+    }
+  }
+
   /*
-   * ---------------------------------------------------------
    * LOADING
    * ---------------------------------------------------------
    */
@@ -3459,6 +3534,18 @@ export default function StudentLiveClassPage() {
                   ? '📹'
                   : '🚫'}
               </button>
+<button
+  type="button"
+  onClick={isScreenSharing ? stopScreenShare : startScreenShare}
+  disabled={screenShareLoading}
+  className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+>
+  {screenShareLoading
+    ? 'Starting...'
+    : isScreenSharing
+      ? 'Stop Sharing'
+      : 'Share Screen'}
+</button>
             </div>
 
             {mediaLoading && (
